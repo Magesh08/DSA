@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Tasks code</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community/styles/ag-theme-alpine.css">
+    <script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+        
+        .ag-input-wrapper:before {
+            opacity: 0;
+        }
+        
+        .na-value {
+            font-style: italic;
+            color: gray;
+        }
+        /* Custom theme styles */
+        
+        .ag-theme-custom .ag-header {
+            background-color: #8E7CC3;
+            color: white;
+        }
+        
+        .ag-theme-custom .ag-header-cell:hover {
+            background-color: rgba(80, 40, 140, 0.66);
+        }
+        
+        .ag-theme-custom .ag-header-cell-moving {
+            background-color: rgb(80, 40, 140);
+        }
+        
+        .ag-theme-custom .ag-header-row {
+            height: 40px;
+        }
+        /* Error Display Styles */
+        
+        #error-display {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            text-align: center;
+            z-index: 1000;
+            display: none;
+        }
+        
+        #error-display img {
+            width: 340px;
+            max-width: 340px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="myGrid" class="ag-theme-alpine ag-theme-custom" style="height: 99vh; width: 100%;"></div>
+
+    <div id="error-display">
+        <img src="https://storage.googleapis.com/flutterflow-io-6f20.appspot.com/projects/robot-dashboard-v3-51tlgt/assets/owfoo2pw0wxo/NORECORDS.png" alt="API Error">
+    </div>
+
+    <script>
+        // ✅ helper function for date formatting
+        function formatDate(params) {
+            const value = params.value;
+            if (!value || value === 'N/A') return 'N/A';
+            try {
+                const trimmedValue = value.split('.')[0]; // remove ms
+                const date = new Date(trimmedValue);
+                return date.toLocaleString(undefined, {
+                    dateStyle: 'short',
+                    timeStyle: 'short'
+                });
+            } catch (e) {
+                console.warn("Could not parse date:", value);
+                return 'N/A';
+            }
+        }
+
+        $(document).ready(function() {
+            const apiUrl = ""; // 🔹 your API endpoint
+
+            $.ajax({
+                url: apiUrl,
+                type: 'GET',
+                headers: {
+                    "Authorization": "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhY2wiOiJhZG1pbiIsImV4cCI6MTkwMDY2MDExOX0.m9Rrmvbo22sJpWgTVynJLDIXFxOfym48F-kGy-wSKqQ",
+                    "Accept": "application/json",
+                    "Content-Type": "application/json"
+                },
+                success: function(data) {
+                    const slotData = data.records.map(record => ({
+                        tray_id: record.tray_id || 'N/A',
+                        status: record.status || 'N/A',
+                        task_status: record.task_status || 'N/A',
+                        station_slot_id: record.station_slot_id || 'N/A',
+                        station_name: record.station_name || 'N/A',
+                        tags: (record.tags && record.tags.length > 0) ? record.tags.join(", ") : 'N/A',
+                        created_at: record.created_at || 'N/A',
+                        updated_at: record.updated_at || 'N/A'
+                    }));
+
+                    const columnDefs = [{
+                        field: "tray_id",
+                        headerName: "Tray ID"
+                    }, {
+                        field: "status",
+                        headerName: "Status"
+                    }, {
+                        field: "task_status",
+                        headerName: "Task Status"
+                    }, {
+                        field: "station_slot_id",
+                        headerName: "Station Slot ID"
+                    }, {
+                        field: "station_name",
+                        headerName: "Station Name"
+                    }, {
+                        field: "tags",
+                        headerName: "Tags"
+                    }, {
+                        field: "created_at",
+                        headerName: "Created At",
+                        valueFormatter: formatDate
+                    }, {
+                        field: "updated_at",
+                        headerName: "Updated At",
+                        valueFormatter: formatDate
+                    }];
+
+                    const gridOptions = {
+                        rowData: slotData,
+                        columnDefs: columnDefs,
+                        defaultColDef: {
+                            flex: 1,
+                            sortable: true,
+                            filter: true,
+                            resizable: true,
+                            editable: false,
+                            valueFormatter: function(params) {
+                                return (params.value === null || params.value === undefined || params.value === '') ?
+                                    'N/A' :
+                                    params.value;
+                            },
+                            cellClassRules: {
+                                'na-value': 'value === "N/A"'
+                            },
+                            cellStyle: {
+                                'user-select': 'text',
+                                'white-space': 'normal',
+                                'overflow-wrap': 'break-word'
+                            }
+                        },
+                        pagination: true,
+                        paginationPageSize: 50,
+                        enableRangeSelection: true,
+                        headerHeight: 40,
+                    };
+
+                    // ✅ Initialize grid depending on version
+                    if (agGrid.createGrid) {
+                        agGrid.createGrid(document.querySelector("#myGrid"), gridOptions);
+                    } else {
+                        new agGrid.Grid(document.querySelector("#myGrid"), gridOptions);
+                    }
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    console.error("API Request Failed:", textStatus, errorThrown, jqXHR);
+                    $("#error-display").show();
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>
