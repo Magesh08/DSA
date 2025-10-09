@@ -153,8 +153,16 @@ console.log(nums1)
 }
 
 
-
-
 merge(nums1, m, nums2, n)
 
 
+let i = 0;
+
+while(i<10){
+    console.log(i);
+    i++;
+    if(i==5){
+        break;
+    }
+    
+}
