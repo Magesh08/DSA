@@ -114,8 +114,8 @@
 // Input:  "MCMXCIV"
 // Output: 1994
 
-// let latter = "MCMXCIV";
-let latter = "XIV"
+let latter = "MCMXCIV";
+
 var romanToInt = function(s) {
     const romanMap = {
         'I': 1,
